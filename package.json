@@ -10,8 +10,8 @@
     "type-tag",
     "hierarchy"
   ],
-  "main": "./lib/src/index.js",
-  "types": "./lib/src/index.d.ts",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
   "scripts": {
     "build": "node clean-lib-folder.js && tsc -p tsconfig.build.json",
     "test": "ts-mocha -p tsconfig.json src/**/*.spec.ts"
