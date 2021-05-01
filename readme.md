@@ -34,11 +34,13 @@ type AnimalRecord = Omit<CreatureRecord, 'type'> & {
 let creatureRecord: CreatureRecord;
 let animalRecord: AnimalRecord;
 
-// the following works, since animal is derived from creature thus can be assigned back, 
+// the following works, since animal is derived from creature 
+// thus can be assigned back, 
 // and `creature;animal${string}` can be assigned to `creature${string}`
 creatureRecord = animalRecord;
 
-// the following does NOT work, since creature is NOT derived fron animal, thus can't be assigned to it, 
+// the following does NOT work, since creature is NOT derived fron animal, 
+// thus can't be assigned to it, 
 // and `creature${string}` can NOT be assigned to `creature;animal${string}`
 animalRecord = creatureRecord; 
 ```
@@ -62,13 +64,20 @@ export type CreatureRecord = {
 
 export const getDescription = multimethod('type', 
     creatureTag, (item: CreatureRecord, note: string) =>
-                `Description: ${item.type}, ${item.weight}kg; Note: ${note}`);
+        `Description: ${item.type}, ${item.weight}kg; Note: ${note}`);
+
+// the resulting 'getDescription' method accepts any type tagged as 
+// `creature${string}`, that is, types where 'type' property has a type of 
+// `creature;animal${string}`, `creature;animal;cat${string}` etc.
+// will be accepted by typing check no problem
 ```
 
 ```typescript
 //animalRecord.ts
 import { CreatureRecord } from './creatureRecord';
-export { getDescription } from './crattureRecord'; // not strictly needed, but makes it easier to use the type
+// not strictly needed, but makes it easier to use the type,
+// since all members can be imported from the same file this way
+export { getDescription } from './crattureRecord'; 
 
 export const animalTag: `creature;animal${string}` = `creature;animal`;
 
@@ -119,18 +128,22 @@ const catRecord: CatRecord = {
     name: 'Jack'
 }
 
-//notice, that we use 'getDescription' from base type 'creatureRecord' for all 3 calls 
+// notice, that we use 'getDescription' from 
+// base type 'creatureRecord' for all 3 calls 
 
-const result1 = getDescription(creatureRecord, '777'); //base method
-//'Description: creature, 4kg; Note: 777'
+const result1 = getDescription(creatureRecord, '777');
+// base method
+// 'Description: creature, 4kg; Note: 777'
 
-const result2 = getDescription(animalRecord, '888'); //same base method, no override
-//'Description: creature;animal, 5kg; Note: 888'
+const result2 = getDescription(animalRecord, '888'); 
+// same base method, no override
+// 'Description: creature;animal, 5kg; Note: 888'
 
-const result3 = getDescription(catRecord, '999'); //override for cats
-//'Description: creature;animal;cat, 6kg, color black, name Jack; Note: 999'
+const result3 = getDescription(catRecord, '999'); 
+// override for cats
+// 'Description: creature;animal;cat, 6kg, color black, name Jack; Note: 999'
 ```
 
 # Word of warning
 
-Remember, that multimethod overrides are set at runtime. Make sure all files containing overrides have been loaded before invoking the method. It may by a good idea to import all relevant files at the root of your app just to ensure this. 
+Remember, **multimethod overrides are set at runtime**. Make sure all files containing overrides have been loaded before invoking the method. It may by a good idea to import all relevant files at the root of your app just to ensure this. 
