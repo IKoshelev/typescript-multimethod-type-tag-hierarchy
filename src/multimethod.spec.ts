@@ -25,52 +25,55 @@ const catRecord = {
 
 describe('multimethod', () => {
 
-    // it('can be defined and called', () => {
+    it('can be defined and called', () => {
 
-    //     const mm = multimethod(
-    //         'type',
-    //         [creatureTag, (item: typeof creatureRecord, note: string) =>
-    //             `Description: ${item.type}, ${item.weight}kg; Note: ${note}`]);
+        const mm = multimethod(
+            'type',
+            creatureTag, 
+            (item: typeof creatureRecord, note: string) =>
+                `Description: ${item.type}, ${item.weight}kg; Note: ${note}`);
 
-    //     const result = mm(creatureRecord, '777');
+        const result = mm(creatureRecord, '777');
 
-    //     assert.equal(result, 'Description: creature, 4kg; Note: 777');
-    // });
+        assert.strictEqual(result, 'Description: creature, 4kg; Note: 777');
+    });
 
-    // it('throws when concrete method can\'t be resolved', () => {
+    it(`throws when concrete method can't be resolved`, () => {
 
-    //     const mm = multimethod(undefined,
-    //         'type',
-    //         [creatureTag, (item: typeof creatureRecord, note: string) =>
-    //             `Description: ${item.type}, ${item.weight}kg; Note: ${note}`]);
+        const mm = multimethod(
+            'type',
+            catTag, 
+            (item: typeof catRecord, note: string) =>
+                `Description: ${item.type}, ${item.weight}kg; Note: ${note}`);
 
-    //     try {
-    //         const result = mm(animalRecord, '777');
-    //     } catch (ex) {
-    //         assert.equal(true, /tag is: animal/.test(ex.message));
-    //         return;
-    //     }
-    //     assert.fail();
-    // });
+        try {
+            const result = mm(animalRecord as any, '777');
+        } catch (ex) {
+            assert.strictEqual(ex.message, 'Could not resolve multimethod call for creature;animal');
+            return;
+        }
+        assert.fail();
+    });
 
-    // it('can be extended after creation', () => {
+    it('can be extended after creation', () => {
 
-    //     const mm = multimethod(undefined,
-    //         'type',
-    //         [creatureTag, (item: typeof creatureRecord, note: string) =>
-    //             `Description: ${item.type}, ${item.weight}kg; Note: ${note}`]);
+        const mm = multimethod(
+            'type',
+            creatureTag, 
+            (item: typeof creatureRecord, note: string) =>
+                `Description: ${item.type}, ${item.weight}kg; Note: ${note}`);
 
-    //     mm.extend(animalTag, (item: typeof animalRecord, note: string) =>
-    //         `Description: ${item.type}, ${item.weight}kg, color ${item.color}; Note: ${note}`);
+        mm.extend(animalTag, (item: typeof animalRecord, note: string) =>
+            `Description: ${item.type}, ${item.weight}kg, color ${item.color}; Note: ${note}`);
 
-    //     const result1 = mm(creatureRecord, '777');
+        const result1 = mm(creatureRecord, '777');
 
-    //     assert.equal(result1, 'Description: creature, 4kg; Note: 777');
+        assert.strictEqual(result1, 'Description: creature, 4kg; Note: 777');
 
-    //     const result2 = mm(animalRecord, '888');
+        const result2 = mm(animalRecord, '888');
 
-    //     assert.equal(result2, 'Description: animal, 5kg, color brown; Note: 888');
-    // });
+        assert.strictEqual(result2, 'Description: creature;animal, 5kg, color brown; Note: 888');
+    });
 
     it('can be used with hierarchy', () => {
 
@@ -95,22 +98,41 @@ describe('multimethod', () => {
 
         assert.strictEqual(result3, 'Description: creature;animal;cat, 6kg, color black, name Jack; Note: 999');
     });
+
+    it(`throws when override of existing method attempted without using 'override' method`, () => {
+
+        const mm = multimethod(
+            'type',
+            catTag, 
+            (item: typeof catRecord, note: string) =>
+                `Description: ${item.type}, ${item.weight}kg; Note: ${note}`);
+
+        try {
+            mm.extend(catTag, () => '');
+        } catch (ex) {
+            assert.strictEqual(ex.message, `Method already exists for creature;animal;cat. Use 'override' if override interded.`);
+            return;
+        }
+        assert.fail();
+    });
+
+    it(`allows override of existing method with 'override' method`, () => {
+
+        const mm = multimethod(
+            'type',
+            catTag, 
+            (item: typeof catRecord, note: string) =>
+                `Description: ${item.type}, ${item.weight}kg; Note: ${note}`);
+
+        let result = mm(catRecord, '999');
+
+        assert.strictEqual(result, 'Description: creature;animal;cat, 6kg; Note: 999');
+
+        mm.override(catTag, () => 'overriden');
+
+        result = mm(catRecord, '999');
+
+        assert.strictEqual(result, 'overriden');
+
+    });
 });
-
-// describe('multimethodFnBased', () => {
-
-//     it('can be used with simple values', () => {
-
-//         const mm = multimethodFnBased(undefined,
-//             (x: boolean) => x,
-//             [true, (_, note: string) => `I'm true ${note}`],
-//             [false, (_, note: string) => `I'm false ${note}`]);
-
-//         const result1 = mm(true, '777');
-//         assert.equal(result1, 'I\'m true 777');
-
-//         const result2 = mm(false, '888');
-//         assert.equal(result2, 'I\'m false 888');
-//     });
-
-// });
