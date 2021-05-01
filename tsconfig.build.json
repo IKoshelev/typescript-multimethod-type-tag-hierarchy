@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "node_modules",
+    "./lib",
+    "**/*.spec.ts"
+  ],
+  "compilerOptions": {
+    "module": "ESNext",
+    "declaration": true,
+    "sourceMap": true,
+    "outDir": "./lib/",
+  }
+}
