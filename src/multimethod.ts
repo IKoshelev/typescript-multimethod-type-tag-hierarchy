@@ -1,7 +1,3 @@
-
-
-
-
 export function multimethod
     <TBaseType, 
     TTagKey extends string & keyof TBaseType, 
@@ -9,8 +5,9 @@ export function multimethod
     TArgs extends unknown[], 
     TReturn>
 (tagKey: TTagKey,
-    ...methods: [`${TBaseTypeTag}${string}`, (item: TBaseType, ...args: TArgs) => TReturn][]) {
-
+    baseTag: TBaseTypeTag, 
+    baseMethod: (item: TBaseType, ...args: TArgs) => TReturn,
+    typeSerparator: string = ";") {
 
 type Expand<T> = T extends infer O ? { [K in keyof O]: O[K] } : never;
 

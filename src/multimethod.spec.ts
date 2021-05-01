@@ -76,8 +76,9 @@ describe('multimethod', () => {
 
         const mm = multimethod(
             'type',
-            [creatureTag, (item: typeof creatureRecord, note: string) =>
-                `Description: ${item.type}, ${item.weight}kg; Note: ${note}`]);
+            creatureTag, 
+            (item: typeof creatureRecord, note: string) =>
+                `Description: ${item.type}, ${item.weight}kg; Note: ${note}`);
 
         mm.extend(catTag, (item: typeof catRecord, note: string) =>
             `Description: ${item.type}, ${item.weight}kg, color ${item.color}, name ${item.name}; Note: ${note}`);
