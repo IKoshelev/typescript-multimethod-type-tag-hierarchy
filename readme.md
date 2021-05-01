@@ -1,177 +1,136 @@
-# Typescript multimethods inspired by Clojure (Lisp)
+# Multimethods that play nice with typescript
 
-This library provides multimethods (multiple dispatch) with support for derivation hierarchies  a-la Clojure to achieve functional polymorphism. When you have several data types related  via 'isa' relationship and distinguished by tag fields you can create a hierarchy of tag values and later use it for multimethods.  
-
-```typescript
-const basicPrice = {
-    type: 'prices/basic',
-    //...
-}
-
-const foreignCurrencyPrice = {
-    type: 'prices/foreign-currency',
-    //...
-}
-
-priceTypesHierarchy.addDerivation('prices/foreign-currency', 'prices/basic');
-
-console.log(
-    priceTypesHierarchy.isa('prices/foreign-currency', 'prices/basic')
-); // true
-```
+This library provides multimethods (multiple dispatch) for type hierarchies built with string literal templates https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html 
 
 Available via NPM:
 
-`npm i multimethod-isa-hierarchy`
+`npm i multimethod-type-tag-hierarchy`
+
+# The hierarchy, polymorphic type tags
+
+With release of typescript 4.3 advances in string literal templates assignability checks allow us to produce type hierarchies which play nicely with typescript typing and achieve polymorphism that does not brake from JSON serialization/deserialization cycle.
+
+```typescript
+
+const creatureTag: `creature${string}` = `creature`;
+const animalTag: `creature;animal${string}` = `creature;animal`;
+
+let creature: creatureTag;
+let animal: animalTag;
+
+creature = animal; // this works fine
+animal = creature; // this produces error
+
+type CreatureRecord = {
+    type: typeof creatureTag,
+    weight: number
+}
+
+type AnimalRecord = Omit<CreatureRecord, 'type'> & {
+    type: typeof animalTag,
+    color: string
+}
+
+let creatureRecord: CreatureRecord;
+let animalRecord: AnimalRecord;
+
+// the following works, since animal is derived from creature thus can be assigned back, 
+// and `creature;animal${string}` can be assigned to `creature${string}`
+creatureRecord = animalRecord;
+
+// the following does NOT work, since creature is NOT derived fron animal, thus can't be assigned to it, 
+// and `creature${string}` can NOT be assigned to `creature;animal${string}`
+animalRecord = creatureRecord; 
+```
+
+Multimethods (inspired by Clojure) build upon this and allow us to utilize functional polymorphism standalone from it's typical Object Oriented coupling with inheritance, thus in a leaner and more flexible form. This is useful with Redux and other functional libraries that don't use classes and instead separate state from methods.
 
 ## Sample usage
 
+Here is a demonstration of a tag based hierarchy `cat` is `animal`, `animal` is `creature`.
+
 ```typescript
-//basic-price.ts
-import { IsaHierarchy, multimethod } from 'multimethod-isa-hierarchy';
+//creatureRecord.ts
+import { multimethod } from 'multimethod-type-tag-hierarchy';
 
-export const priceTypesHierarchy = new IsaHierarchy();
+export const creatureTag: `creature${string}` = `creature`;
 
-export const basePriceTypeTag = 'prices/basic' as const;
-
-export type BasicPrice = {
-    type: typeof basePriceTypeTag,
-    expirationDate: Date,
-    amount: number;
+export type CreatureRecord = {
+    type: tyepof creatureTag,
+    weight: number
 }
 
-// methods that we expect to override are defined as multimethods
-export const getPriceDescription = multimethod( priceTypesHierarchy, 'type',
-
-    [basePriceTypeTag, (price: BasicPrice, useCurrencySymnol: boolean = false) => {
-        return `${price.amount} ${useCurrencySymnol ? '$' : 'USD'}`
-    }]);
-
-export const isExpired = multimethod(priceTypesHierarchy, 'type',
-
-    [basePriceTypeTag, (price: BasicPrice) => {
-        return new Date() >= price.expirationDate;
-    }]);
+export const getDescription = multimethod('type', 
+    creatureTag, (item: CreatureRecord, note: string) =>
+                `Description: ${item.type}, ${item.weight}kg; Note: ${note}`);
 ```
 
 ```typescript
-//foreign-currency-price.ts
-import {
-    BasicPrice,
-    basePriceTypeTag,
-    priceTypesHierarchy,
-    getPriceDescription
-} from './basic-price.js';
+//animalRecord.ts
+import { CreatureRecord } from './creatureRecord';
+export { getDescription } from './crattureRecord'; // not strictly needed, but makes it easier to use the type
 
-export const foreignCurrencyPriceTypeTag = 'prices/foreign-currency' as const;
+export const animalTag: `creature;animal${string}` = `creature;animal`;
 
-// 'prices/foreign-currency' is derived from 'prices/basic'
-priceTypesHierarchy.addDerivation(foreignCurrencyPriceTypeTag, basePriceTypeTag);
-
-console.log(
-    priceTypesHierarchy.isa('prices/foreign-currency', 'prices/basic')
-); // true
-
-export type ForeignCurrencyPrice = Omit<BasicPrice, 'type'> & {
-    type: typeof foreignCurrencyPriceTypeTag,
-    currency: {
-        name: string,
-        symbol: string,
-        conversionRate: number
-    }
+export type AnimalRecord = Omit<CreatureRecord, 'type'> & {
+    type: typeof animalTag,
+    color: string
 }
-
-//add getPriceDescription override that will handle ForeignCurrencyPrice
-getPriceDescription.extend(foreignCurrencyPriceTypeTag,
-    (price: ForeignCurrencyPrice, useCurrencySymnol: boolean = false) => {
-        const cur = price.currency;
-        return `${price.amount * cur.conversionRate}` +
-            ` ${useCurrencySymnol ? cur.symbol : cur.name}`
-    });
-
-//hint, you can also reexport multimehods for easier imports
-export { getPriceDescription, isExpired } from './basic-price';
 ```
 
 ```typescript
-//test.ts
+//catRecord.ts
+import { AnimalRecord, getDescription } from './animalRecord';
+export { getDescription } from './animalRecord';
 
-import {
-    basePriceTypeTag,
-    BasicPrice,
-    getPriceDescription,
-    isExpired
-} from './basic-price';
+export const catTag: `creature;animal;cat${string}` = `creature;animal;cat`;
 
-import {
-    foreignCurrencyPriceTypeTag,
-    ForeignCurrencyPrice
-} from './foreign-currency-price';
-
-const basicPrice: BasicPrice = {
-    type: basePriceTypeTag,
-    amount: 100,
-    expirationDate: new Date(2021, 1, 1)
+export type CatRecord = Omit<AnimalRecord, 'type'> & {
+    type: typeof catTag,
+    name: string
 }
 
-console.log(
-    getPriceDescription(basicPrice, true)
-); // 100 $
-
-console.log(
-    isExpired(basicPrice)
-); // false
-
-const foreingCurPrice: ForeignCurrencyPrice = {
-    type: foreignCurrencyPriceTypeTag,
-    amount: 100,
-    expirationDate: new Date(2021, 1, 1),
-    currency: {
-        name: 'GBP',
-        symbol: '£',
-        conversionRate: 0.81
-    }
-}
-
-// ForeignCurrencyPrice-specific method is used
-console.log(
-    getPriceDescription(foreingCurPrice, true)
-); //81 £
-
-// Since there is no override, hierarchy is used to lookup 
-// concrete method implementation for nearest ancestor.
-// Because priceTypesHierarchy.isa('prices/foreign-currency', 'prices/basic') is true,
-// method for 'prices/basic' will be used
-console.log(
-    isExpired(foreingCurPrice)
-); //false
+// override the description method for cats
+getDescription.extend(catTag, (item: CatRecord, note: string) =>
+            `Description: ${item.type}, ${item.weight}kg, color ${item.color}, name ${item.name}; Note: ${note}`);
 ```
 
-# Inspiration 
+```typescript
+//showcase.ts
+import { creatureTag, CreatureRecord, getDescription } from './creatureRecord';
+import { animalTag, AnimalRecord } from './animalRecord';
+import { catTag, CatRecord } from './catRecord';
 
-This lib is inspired by Clojure multimethods and `derive` functionality.
+const creatureRecord: CreatureRecord = {
+    type: creatureTag,
+    weight: 4
+}
 
-https://clojure.org/about/runtime_polymorphism 
+const animalRecord: AnimalRecord = {
+    type: animalTag,
+    weight: 5,
+    color: 'brown'
+}
 
-https://clojuredocs.org/clojure.core/derive
+const catRecord: CatRecord = {
+    type: catTag,
+    weight: 6,
+    color: 'black',
+    name: 'Jack'
+}
 
-This approach allows us to utilize functional polymorphism standalone from it's typical Object Oriented  coupling with inheritance, thus in a leaner and more flexible form. This can be useful with Redux and other functional libraries that don't use classes and instead separate state from methods.
+//notice, that we use 'getDescription' from base type 'creatureRecord' for all 3 calls 
+
+const result1 = getDescription(creatureRecord, '777'); //base method
+//'Description: creature, 4kg; Note: 777'
+
+const result2 = getDescription(animalRecord, '888'); //same base method, no override
+//'Description: creature;animal, 5kg; Note: 888'
+
+const result3 = getDescription(catRecord, '999'); //override for cats
+//'Description: creature;animal;cat, 6kg, color black, name Jack; Note: 999'
+```
 
 # Word of warning
 
-Functional polymorphism is an advanced technique, make sure you will really benefit from it before using.
-
-# Word of advice
-
-If your project is going the functional route, probably using immutable state tree, it is quite likely you would benefit from other concepts heavily utilized by languages like Clojure, specifically, 'spec' https://clojure.org/guides/spec, a library which lets you define runtime-checkable schemas for your data in a very declarative manner. 
-
-Typescript provides an even better environment for this approach with its incredibly  powerful design-time types system, and if you use a library like https://github.com/vriad/zod , you will be able to write type definitions usable both for IDE intellisense and runtime validation of data shape (as opposed to types existing just during compilation). Best part is, this approach doesn't even add much effort to defining types! Just check-out https://github.com/vriad/zod#objects .
-
-# Other multimethod implementations
-
-I wrote this library because I couldn't find one that would support derivation for tag relationships. Still, if you are looking for a different implementation, you might want to check
-https://github.com/caderek/arrows/blob/master/packages/multimethod/README.md
-
-https://github.com/yortus/multimethods
-
-https://github.com/Seikho/multiple-dispatch
+Remember, that multimethod overrides are set at runtime. Make sure all files containing overrides have been loaded before invoking the method. It may by a good idea to import all relevant files at the root of your app just to ensure this. 

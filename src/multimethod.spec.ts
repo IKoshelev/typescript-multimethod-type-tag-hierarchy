@@ -1,22 +1,37 @@
 import assert from 'assert';
 import { multimethod } from './multimethod';
 
-const creatureTag = 'creature' as const;
-const animalTag = `${creatureTag};animal` as const;
-const catTag = `${animalTag};cat` as const;
+const creatureTag: `creature${string}` = `creature`;
+const animalTag: `creature;animal${string}` = `creature;animal`;
+const catTag: `creature;animal;cat${string}` = `creature;animal;cat`;
 
-const creatureRecord = {
+type CreatureRecord = {
+    type: typeof creatureTag,
+    weight: number
+}
+
+type AnimalRecord = Omit<CreatureRecord, 'type'> & {
+    type: typeof animalTag,
+    color: string
+}
+
+type CatRecord = Omit<AnimalRecord, 'type'> & {
+    type: typeof catTag,
+    name: string
+}
+
+let creatureRecord: CreatureRecord = {
     type: creatureTag,
     weight: 4
 }
 
-const animalRecord = {
+let animalRecord: AnimalRecord = {
     type: animalTag,
     weight: 5,
     color: 'brown'
 }
 
-const catRecord = {
+let catRecord: CatRecord = {
     type: catTag,
     weight: 6,
     color: 'black',
@@ -30,7 +45,7 @@ describe('multimethod', () => {
         const mm = multimethod(
             'type',
             creatureTag, 
-            (item: typeof creatureRecord, note: string) =>
+            (item: CreatureRecord, note: string) =>
                 `Description: ${item.type}, ${item.weight}kg; Note: ${note}`);
 
         const result = mm(creatureRecord, '777');
@@ -43,7 +58,7 @@ describe('multimethod', () => {
         const mm = multimethod(
             'type',
             catTag, 
-            (item: typeof catRecord, note: string) =>
+            (item: CatRecord, note: string) =>
                 `Description: ${item.type}, ${item.weight}kg; Note: ${note}`);
 
         try {
@@ -60,10 +75,10 @@ describe('multimethod', () => {
         const mm = multimethod(
             'type',
             creatureTag, 
-            (item: typeof creatureRecord, note: string) =>
+            (item: CreatureRecord, note: string) =>
                 `Description: ${item.type}, ${item.weight}kg; Note: ${note}`);
 
-        mm.extend(animalTag, (item: typeof animalRecord, note: string) =>
+        mm.extend(animalTag, (item: AnimalRecord, note: string) =>
             `Description: ${item.type}, ${item.weight}kg, color ${item.color}; Note: ${note}`);
 
         const result1 = mm(creatureRecord, '777');
@@ -80,10 +95,10 @@ describe('multimethod', () => {
         const mm = multimethod(
             'type',
             creatureTag, 
-            (item: typeof creatureRecord, note: string) =>
+            (item: CreatureRecord, note: string) =>
                 `Description: ${item.type}, ${item.weight}kg; Note: ${note}`);
 
-        mm.extend(catTag, (item: typeof catRecord, note: string) =>
+        mm.extend(catTag, (item: CatRecord, note: string) =>
             `Description: ${item.type}, ${item.weight}kg, color ${item.color}, name ${item.name}; Note: ${note}`);
 
         const result1 = mm(creatureRecord, '777');
@@ -104,7 +119,7 @@ describe('multimethod', () => {
         const mm = multimethod(
             'type',
             catTag, 
-            (item: typeof catRecord, note: string) =>
+            (item: CatRecord, note: string) =>
                 `Description: ${item.type}, ${item.weight}kg; Note: ${note}`);
 
         try {
@@ -121,7 +136,7 @@ describe('multimethod', () => {
         const mm = multimethod(
             'type',
             catTag, 
-            (item: typeof catRecord, note: string) =>
+            (item: CatRecord, note: string) =>
                 `Description: ${item.type}, ${item.weight}kg; Note: ${note}`);
 
         let result = mm(catRecord, '999');
