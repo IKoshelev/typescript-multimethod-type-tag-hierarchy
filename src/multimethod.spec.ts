@@ -89,11 +89,11 @@ describe('multimethod', () => {
 
         const result2 = mm(animalRecord, '888');
 
-        assert.strictEqual(result2, 'Description: animal, 5kg; Note: 888');
+        assert.strictEqual(result2, 'Description: creature;animal, 5kg; Note: 888');
 
         const result3 = mm(catRecord, '999');
 
-        assert.strictEqual(result3, 'Description: cat, 6kg, color black, name Jack; Note: 999');
+        assert.strictEqual(result3, 'Description: creature;animal;cat, 6kg, color black, name Jack; Note: 999');
     });
 });
 
