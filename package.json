@@ -1,6 +1,6 @@
 {
   "name": "multimethod-type-tag-hierarchy",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "Recreation of clojure multimethods with a hierarchy based around typescript string literal templates and taged types.",
   "keywords": [
     "typescript",

@@ -114,6 +114,25 @@ describe('multimethod', () => {
         assert.strictEqual(result3, 'Description: creature;animal;cat, 6kg, color black, name Jack; Note: 999');
     });
 
+    it(`can handle multiple arguments`, () => {
+
+        const mm = multimethod(
+            'type',
+            creatureTag, 
+            (item: CreatureRecord, a: string, b: string, c: string) =>
+                `Description: ${item.type}, ${item.weight}kg; ${a} ${b} ${c}`);
+
+        let result = mm(catRecord, 'a', 'b', 'c');
+
+        assert.strictEqual(result, 'Description: creature;animal;cat, 6kg; a b c');
+
+        mm.extend(catTag, (item: CatRecord, a: string, b: string) => `overriden ${a} ${b}`);
+
+        result = mm(catRecord, 'a', 'b', 'c');
+
+        assert.strictEqual(result, 'overriden a b');
+    });
+
     it(`throws when override of existing method attempted without using 'override' method`, () => {
 
         const mm = multimethod(
@@ -148,6 +167,72 @@ describe('multimethod', () => {
         result = mm(catRecord, '999');
 
         assert.strictEqual(result, 'overriden');
+    });
 
+    const aTag: `a${string}` = `a`;
+    const bTag: `a;b${string}` = `a;b`;
+    const cTag: `a;b;c${string}` = `a;b;c`;
+    const dTag: `a;b;c;d${string}` = `a;b;c;d`;
+    const eTag: `a;b;c;d;e${string}` = `a;b;c;d;e`;
+
+    type ARecord = { type: typeof aTag, a: number }
+    type BRecord = Omit<ARecord, 'type'> & { type: typeof bTag, b: number }
+    type CRecord = Omit<BRecord, 'type'> & { type: typeof cTag, c: number }
+    type DRecord = Omit<CRecord, 'type'> & { type: typeof dTag, d: number }
+    type ERecord = Omit<DRecord, 'type'> & { type: typeof eTag, e: number }
+
+    it(`when overriding, allows to call base method via 'this.base(...)'`, () => {
+
+        const cRecord = {
+            type: cTag,
+            a: 1,
+            b: 2,
+            c: 3,
+        }
+
+        const dRecord = {
+            type: dTag,
+            a: 1,
+            b: 2,
+            c: 3,
+            d: 4,
+        }
+
+        const eRecord = {
+            type: eTag,
+            a: 1,
+            b: 2,
+            c: 3,
+            d: 4,
+            e: 5
+        }
+
+        const mm = multimethod(
+            'type',
+            aTag, 
+            (item: ARecord, note: string) =>
+                `Method for ARecor; a=${item.a}; note=${note};`);
+
+        mm.override(cTag, function (a: CRecord, b) {
+            const baseResult = this.base(a,b);
+            return `${baseResult} Method for CRecord; c=${a.c};`;
+        });
+
+        mm.override(eTag, function (a: ERecord, b: string) {
+            const baseResult = this.base(a,b);
+            return `${baseResult} Method for ERecord; e=${a.e};`;
+        });
+
+        const result1 = mm(cRecord, "note");
+
+        assert.strictEqual(result1, 'Method for ARecor; a=1; note=note; Method for CRecord; c=3;');
+
+        const result2 = mm(dRecord, "note");
+
+        assert.strictEqual(result2, 'Method for ARecor; a=1; note=note; Method for CRecord; c=3;');
+
+        const result3 = mm(eRecord, "note");
+
+        assert.strictEqual(result3, 'Method for ARecor; a=1; note=note; Method for CRecord; c=3; Method for ERecord; e=5;');
     });
 });

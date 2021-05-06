@@ -144,6 +144,41 @@ const result3 = getDescription(catRecord, '999');
 // 'Description: creature;animal;cat, 6kg, color black, name Jack; Note: 999'
 ```
 
+You also have ability to call base method from inside override. Base method resoltion moves up the tag hierarchy (in direction of less derived type). In example below, when we call method defined for `a;b;c` the call to `this.base(...)` will look for a method defined for `a;b` and then for `a`. It will take the first method encountered (though you can call `this.base` again from inside that method).
+
+```typescript
+
+const aTag: `a${string}` = `a`;
+const bTag: `a;b${string}` = `a;b`;
+const cTag: `a;b;c${string}` = `a;b;c`;
+
+type ARecord = { type: typeof aTag, a: number }
+type BRecord = Omit<ARecord, 'type'> & { type: typeof bTag, b: number }
+type CRecord = Omit<BRecord, 'type'> & { type: typeof cTag, c: number }
+
+const cRecord = {
+    type: cTag,
+    a: 1,
+    b: 2,
+    c: 3
+}
+
+const mm = multimethod(
+    'type',
+    aTag, 
+    (item: ARecord, note: string) =>
+        `Method for ARecor; a=${item.a}; note=${note};`);
+
+mm.override(cTag, function (a: CRecord, b) {
+    const baseResult = this.base(a,b);  
+    return `${baseResult} Method for CRecord; c=${a.c};`;
+});
+
+const result = mm(cRecord, "note");
+
+assert.strictEqual(result1, 'Method for ARecor; a=1; note=note; Method for CRecord; c=3;');
+```
+
 # Word of warning
 
 Remember, **multimethod overrides are set at runtime**. Make sure all files containing overrides have been loaded before invoking the method. It may by a good idea to import all relevant files at the root of your app just to ensure this. 
