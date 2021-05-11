@@ -1,6 +1,8 @@
 # Multimethods that play nice with typescript
 
-This library provides multimethods (multiple dispatch) for type hierarchies built with string literal templates https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html 
+This library provides multimethods (multiple dispatch) for type hierarchies built with [String Literal Templates](https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html) 
+
+[Article explaining Tag hierarchies in detail](https://ikoshelev.azurewebsites.net/search/id/16/Pragmatic-uses-of-TypeScript-type-system-03-Tag-hierarchies-via-Template-Literal-Types)
 
 Available via NPM:
 
