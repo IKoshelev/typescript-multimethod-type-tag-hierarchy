@@ -26,7 +26,7 @@ type CreatureRecord = {
     weight: number
 }
 
-type AnimalRecord = Omit<CreatureRecord, 'type'> & {
+type AnimalRecord = CreatureRecord & {
     type: typeof animalTag,
     color: string
 }
@@ -81,7 +81,7 @@ export { getDescription } from './crattureRecord';
 
 export const animalTag: `creature;animal${string}` = `creature;animal`;
 
-export type AnimalRecord = Omit<CreatureRecord, 'type'> & {
+export type AnimalRecord = CreatureRecord & {
     type: typeof animalTag,
     color: string
 }
@@ -94,7 +94,7 @@ export { getDescription } from './animalRecord';
 
 export const catTag: `creature;animal;cat${string}` = `creature;animal;cat`;
 
-export type CatRecord = Omit<AnimalRecord, 'type'> & {
+export type CatRecord = AnimalRecord & {
     type: typeof catTag,
     name: string
 }
@@ -153,8 +153,8 @@ const bTag: `a;b${string}` = `a;b`;
 const cTag: `a;b;c${string}` = `a;b;c`;
 
 type ARecord = { type: typeof aTag, a: number }
-type BRecord = Omit<ARecord, 'type'> & { type: typeof bTag, b: number }
-type CRecord = Omit<BRecord, 'type'> & { type: typeof cTag, c: number }
+type BRecord = ARecord & { type: typeof bTag, b: number }
+type CRecord = BRecord & { type: typeof cTag, c: number }
 
 const cRecord = {
     type: cTag,
